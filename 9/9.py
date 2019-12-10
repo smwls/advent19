@@ -2,7 +2,6 @@ from collections import defaultdict
 
 def exec_code(inputs, tape, init_head):
     head = init_head
-    ops = [lambda x, y : x + y, lambda x, y : x * y, id, id]
     input_counter = 0 if init_head == 0 else 1
     relative_base = 0
     try:
@@ -21,8 +20,11 @@ def exec_code(inputs, tape, init_head):
                     values.append(head + i + 1)
                 elif positions[-1 - i] == 2:
                     values.append(tape[head + i + 1] + relative_base)
-            if opcode in [1,2]:
-                result = ops[opcode - 1](tape[values[0]], tape[values[1]])
+            if opcode == 1:
+                result = tape[values[0]] + tape[values[1]]
+                tape[values[2]] = result
+            elif opcode == 2:
+                result = tape[values[0]] * tape[values[1]]
                 tape[values[2]] = result
             elif opcode == 3:
                 tape[values[0]] = inputs[input_counter]
