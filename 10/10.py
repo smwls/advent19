@@ -17,11 +17,9 @@ def slope(a1, a2):
         return Fraction(a1[1] - a2[1], a1[0] - a2[0])
     except ZeroDivisionError:
         if a1[1] >= a2[1]:
-            return float('inf')
+            return float('inf') # this is for part 2
         else:
             return float('-inf')
-
-
 
 def get_slope_matrix(asts):
     slope_matrix = [[None for i in asts] for j in asts]
@@ -33,7 +31,7 @@ def get_slope_matrix(asts):
     return slope_matrix
 
 def groups_of_values(lst):
-    return [[i for i in range(len(lst)) if lst[i] == y] for y in sorted(set(lst))]
+    return [[i for i in range(len(lst)) if lst[i] == y] for y in set(lst)]
 
 def find_best_base_location(asts):
     # naive algorithm - i'm sure there's a much more sophisticated method! 
@@ -57,37 +55,35 @@ def find_best_base_location(asts):
     return (asts[best_ast], best_ast_vis)
 
 def vaporise_asteroids(asts, base):
-    remaining_asts = [a for a in asts if a != base]
-    vaporised_asteroids = []
-    while len(vaporised_asteroids) < 200:
+    negatives = [a for a in asts if a < base or (a[0] == base[0] and a[1] > base[1])]
+    positives = [a for a in asts if a > base or (a[0] == base[0] and a[1] < base[1])]
+    slopes_of_negatives = [slope(a, base) for a in negatives]
+    slopes_of_positives = [slope(a, base) for a in positives]
+    negative_groups = [[slope, sorted([(x[0], -1*x[1]) for x in negatives if (x, slope) in zip(negatives, slopes_of_negatives)])] for slope in sorted(set(slopes_of_negatives))]
+    positive_groups = [[slope, sorted([(x[0], -1*x[1]) for x in positives if (x, slope) in zip(positives, slopes_of_positives)])] for slope in sorted(set(slopes_of_positives))]
+    vaporised = []
+    # print(groups)
+    for group in negative_groups:
+        group[1] = [group[1][-1 * i] for i in range(1, len(group[1]) + 1)]
+    groups = positive_groups + negative_groups
+    while len(vaporised) < len(negatives) + len(positives):
         to_remove = []
-        slope_vector = [slope(a, base) for a in remaining_asts]
-        groups = groups_of_values(slope_vector)
-        for grp in groups:
-            others = sorted([remaining_asts[j] for j in grp])
-            if len(others) == 1:
-                to_remove.append(others[0])
-            elif others[0] > base:
-                to_remove.append(others[0])
-            elif others[-1] < base:
-                to_remove.append(others[-1])
-            else:
-                min_ast = min([ast for ast in others if ast < base])
-                max_ast = max([ast for ast in others if ast > base])
-                to_remove += [min_ast, max_ast]
-            if len(to_remove) + len(vaporised_asteroids) >= 200:
-                break
-        for a in to_remove:
-            remaining_asts.remove(a)
-            vaporised_asteroids.append(a)
-    return vaporised_asteroids
+        for group in groups:
+            try:
+                to_vap = group[1].pop(0)
+                vaporised.append((to_vap[0], -1*to_vap[1]))
+            except IndexError:
+                to_remove.append(group)
+        for t in to_remove:
+            groups.remove(t)
+    return vaporised[198:201]
 
-# with open('10', 'r') as f:
-#     input_data = f.read().split('\n')
-#     parsed_map = parse_map(input_data)
-#     # print(parsed_map)
-#     # print(find_best_base_location(parsed_map))
-#     print(vaporise_asteroids(parsed_map, (14, 17)))
+with open('10', 'r') as f:
+    input_data = f.read().split('\n')
+    parsed_map = parse_map(input_data)
+    # print(parsed_map)
+    # print(find_best_base_location(parsed_map))
+    print(vaporise_asteroids(parsed_map, (14, 17)))
 
 def run_test_2():
 #     t = """.#....#####...#..
@@ -121,8 +117,7 @@ def run_test_2():
     # print(coord)
     print(vaporise_asteroids(parsed_map, (11,13)))   
 
-run_test_2()
-
+# run_test_2()
 def run_test():
     t0 = {'map': """#.#.#
 .....
